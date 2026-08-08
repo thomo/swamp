@@ -1,0 +1,104 @@
+{
+  "@swamp/ssh": {
+    "version": "2026.07.28.1",
+    "pulledAt": "2026-08-06T20:33:16.954Z",
+    "files": [
+      ".swamp/pulled-extensions/@swamp/ssh/models/ssh.ts",
+      ".swamp/pulled-extensions/@swamp/ssh/models/_lib/selectors.ts",
+      ".swamp/pulled-extensions/@swamp/ssh/models/_lib/schemas.ts",
+      ".swamp/pulled-extensions/@swamp/ssh/models/_lib/runner.ts",
+      ".swamp/pulled-extensions/@swamp/ssh/models/_lib/operations.ts",
+      ".swamp/pulled-extensions/@swamp/ssh/models/_lib/hosts.ts",
+      ".swamp/pulled-extensions/@swamp/ssh/models/_lib/forwarding.ts",
+      ".swamp/pulled-extensions/@swamp/ssh/models/_lib/control_master.ts",
+      ".swamp/pulled-extensions/@swamp/ssh/models/_lib/cidr.ts",
+      ".swamp/pulled-extensions/@swamp/ssh/models/_lib/checks.ts",
+      ".swamp/bundles/464e926c/ssh.js",
+      ".swamp/pulled-extensions/@swamp/ssh/files/README.md",
+      ".swamp/pulled-extensions/@swamp/ssh/files/LICENSE.txt",
+      ".swamp/pulled-extensions/@swamp/ssh/manifest.yaml"
+    ],
+    "checksum": "ac1b160bcf07876c341bf4f17a42817ba586f6e233da8a75afe6509eb2e9b422",
+    "filesChecksum": "5f123145ce45ae8bacb0eeb9286af60a45f19a2921f5de8ed37e1880b6e930a3",
+    "serverUrl": "https://swamp-club.com"
+  },
+  "@stateless/proxmox": {
+    "version": "2026.06.12.1",
+    "pulledAt": "2026-08-06T20:33:27.357Z",
+    "files": [
+      ".swamp/pulled-extensions/@stateless/proxmox/models/proxmox_qemu.ts",
+      ".swamp/pulled-extensions/@stateless/proxmox/models/proxmox_lxc.ts",
+      ".swamp/pulled-extensions/@stateless/proxmox/models/_lib/proxmox/schemas.ts",
+      ".swamp/pulled-extensions/@stateless/proxmox/models/_lib/proxmox/pve.ts",
+      ".swamp/pulled-extensions/@stateless/proxmox/models/_lib/proxmox/node.ts",
+      ".swamp/pulled-extensions/@stateless/proxmox/models/_lib/proxmox/lxc.ts",
+      ".swamp/pulled-extensions/@stateless/proxmox/models/_lib/proxmox/client.ts",
+      ".swamp/bundles/f01c517f/proxmox_qemu.js",
+      ".swamp/bundles/f01c517f/proxmox_lxc.js",
+      ".swamp/pulled-extensions/@stateless/proxmox/files/README.md",
+      ".swamp/pulled-extensions/@stateless/proxmox/files/LICENSE.txt",
+      ".swamp/pulled-extensions/@stateless/proxmox/manifest.yaml"
+    ],
+    "checksum": "743f1a914c95aaa244695b882164de437b39237a8bac5b139d1bab89d02e8028",
+    "filesChecksum": "60b6e9856549328772629ec5dfd406506916945508248b18ea70473cdbb8e044",
+    "serverUrl": "https://swamp-club.com"
+  },
+  "@keeb/proxmox": {
+    "version": "2026.07.18.1",
+    "pulledAt": "2026-08-08T10:47:28.838Z",
+    "files": [
+      ".swamp/pulled-extensions/@keeb/proxmox/models/proxmox_vm.ts",
+      ".swamp/pulled-extensions/@keeb/proxmox/models/proxmox_node.ts",
+      ".swamp/pulled-extensions/@keeb/proxmox/models/lib/proxmox.ts",
+      ".swamp/pulled-extensions/@keeb/proxmox/workflows/vm-lifecycle-test.yaml",
+      ".swamp/pulled-extensions/@keeb/proxmox/workflows/sync-fleet.yaml",
+      ".swamp/pulled-extensions/@keeb/proxmox/workflows/stop-vm.yaml",
+      ".swamp/pulled-extensions/@keeb/proxmox/workflows/start-vm.yaml",
+      ".swamp/pulled-extensions/@keeb/proxmox/workflows/guest-agent-test.yaml",
+      ".swamp/pulled-extensions/@keeb/proxmox/workflows/delete-vm.yaml",
+      ".swamp/pulled-extensions/@keeb/proxmox/workflows/create-vm.yaml",
+      ".swamp/bundles/03979e86/proxmox_vm.js",
+      ".swamp/bundles/03979e86/proxmox_node.js",
+      ".swamp/pulled-extensions/@keeb/proxmox/files/README.md",
+      ".swamp/pulled-extensions/@keeb/proxmox/files/LICENSE.txt",
+      ".claude/skills/proxmox",
+      ".swamp/pulled-extensions/@keeb/proxmox/manifest.yaml"
+    ],
+    "checksum": "fa221cbce07eabcc3f2bcedeeef267bf34c2bb5b4c94b5306dd46c9d1474e1e6",
+    "filesChecksum": "a641c73324111c1bef736e08c875e90d280c5b7ef0c30b90953bbe9bf40f65d2",
+    "serverUrl": "https://swamp-club.com"
+  },
+  "@keeb/ssh": {
+    "version": "2026.07.18.1",
+    "pulledAt": "2026-08-08T10:47:30.066Z",
+    "files": [
+      ".swamp/pulled-extensions/@keeb/ssh/models/ssh_host.ts",
+      ".swamp/pulled-extensions/@keeb/ssh/models/lib/ssh.ts",
+      ".swamp/bundles/5dc85285/ssh_host.js",
+      ".swamp/pulled-extensions/@keeb/ssh/files/README.md",
+      ".swamp/pulled-extensions/@keeb/ssh/files/LICENSE.txt",
+      ".claude/skills/ssh",
+      ".swamp/pulled-extensions/@keeb/ssh/manifest.yaml"
+    ],
+    "checksum": "461dae56d43038505f2bfa63d5cd0243c0709d419032a51f9d6c2f78404fa85d",
+    "filesChecksum": "1da4f63dec9380aa864a91936cc6304f62070f22de749b1ae1e45806f81b544a",
+    "serverUrl": "https://swamp-club.com"
+  },
+  "@dmc/proxmox": {
+    "version": "2026.07.18.1",
+    "pulledAt": "2026-08-08T10:47:34.550Z",
+    "files": [
+      ".swamp/pulled-extensions/@dmc/proxmox/models/proxmox_vm_extras.ts",
+      ".swamp/pulled-extensions/@dmc/proxmox/models/proxmox_storage.ts",
+      ".swamp/pulled-extensions/@dmc/proxmox/models/lib/proxmox.ts",
+      ".swamp/bundles/15d5084f/proxmox_vm_extras.js",
+      ".swamp/bundles/15d5084f/proxmox_storage.js",
+      ".swamp/pulled-extensions/@dmc/proxmox/files/README.md",
+      ".swamp/pulled-extensions/@dmc/proxmox/files/LICENSE.md",
+      ".swamp/pulled-extensions/@dmc/proxmox/manifest.yaml"
+    ],
+    "checksum": "c49dfa53891386a799055e7a0883edd03eec453194c388267150febd0536773d",
+    "filesChecksum": "fb8e109bdf1b01a72b140dd30cbbe7cfdc7ba42360162ead9c6a684fdbcf1cc8",
+    "serverUrl": "https://swamp-club.com"
+  }
+}
