@@ -1,0 +1,17 @@
+type: '@swamp/ssh'
+typeVersion: 2026.07.28.1
+id: d4818278-5437-4bec-86ca-2193ab7f81a5
+name: satellite
+version: 1
+tags: {}
+globalArguments:
+  name: satellite
+  transport:
+    kind: ssh
+    user: pi
+    auth:
+      kind: key
+  hosts:
+    - name: satellite
+      address: satellite.thomo.de
+methods: {}
