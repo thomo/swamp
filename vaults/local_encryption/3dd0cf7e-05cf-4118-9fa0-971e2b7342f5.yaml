@@ -1,0 +1,7 @@
+id: 3dd0cf7e-05cf-4118-9fa0-971e2b7342f5
+name: proxmox
+type: local_encryption
+config:
+  auto_generate: true
+  base_dir: /home/thomo/projects/personal/swamp
+createdAt: '2026-08-08T19:22:05.526Z'

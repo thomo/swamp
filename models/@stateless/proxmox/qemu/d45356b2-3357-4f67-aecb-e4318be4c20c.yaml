@@ -1,0 +1,15 @@
+type: '@stateless/proxmox/qemu'
+typeVersion: 2026.06.10.1
+id: d45356b2-3357-4f67-aecb-e4318be4c20c
+name: proxmox-vm
+version: 1
+tags: {}
+globalArguments:
+  transport:
+    kind: api
+    node: proxmox
+    apiUrl: https://proxmox.thomo.de:8006
+    tokenId: "Api@pve!swamp"
+    tokenSecret: ${{ vault.get('proxmox', 'token_secret') }}
+    skipTlsVerify: false
+methods: {}

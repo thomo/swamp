@@ -1,146 +1,73 @@
 /**
- * Adds a `shutdown` method to the community `@keeb/proxmox/node` type —
- * powers off the Proxmox host itself via POST /nodes/{node}/status
- * (command=shutdown). The base type only ships `auth`/`status`.
+ * Adds a `nodeShutdown` method to `@stateless/proxmox/lxc` — powers off the
+ * Proxmox host itself via POST /nodes/{node}/status (command=shutdown). The
+ * base type ships nodeStatus/nodeConfig (read-only host telemetry) but no
+ * host power operation.
  *
- * Self-contained auth: reuses the same on-disk ticket cache the base type's
- * `auth` method writes (`.swamp/data/@keeb/proxmox/node/<defId>/auth/`), and
- * falls back to username/password if no fresh cache exists. Duplicated here
- * rather than imported from the pulled extension's internal lib, which isn't
- * a stable cross-package import target.
+ * Only the `api` transport (token auth) is implemented — the request/auth
+ * logic is duplicated here rather than imported from the pulled extension's
+ * internal `_lib/proxmox/client.ts`, which isn't a stable cross-package
+ * import target (its file layout is specific to `pulled-extensions` and can
+ * change between versions or when the extension is source-loaded instead).
  */
 import { z } from "npm:zod@4";
 
-interface CurlOptions {
-  method?: string;
-  headers?: Record<string, string>;
-  body?: string;
-  skipTlsVerify?: boolean;
-}
-
-async function fetchWithCurl(url: string, options: CurlOptions) {
-  const { method = "GET", headers = {}, body, skipTlsVerify } = options;
-  const args = ["-s", "-S"];
-  if (skipTlsVerify) args.push("-k");
-  args.push("-X", method);
-  for (const [key, value] of Object.entries(headers)) {
-    args.push("-H", `${key}: ${value}`);
-  }
-  if (body) args.push("-d", body);
-  args.push("-i", url);
-
-  // @ts-ignore - Deno API
-  const command = new Deno.Command("curl", { args });
-  const { code, stdout, stderr } = await command.output();
-  if (code !== 0) {
-    throw new Error(
-      `curl failed with code ${code}: ${new TextDecoder().decode(stderr)}`,
-    );
-  }
-
-  const output = new TextDecoder().decode(stdout);
-  const headerEndIndex = output.indexOf("\r\n\r\n");
-  const headersText = output.substring(0, headerEndIndex);
-  const bodyText = output.substring(headerEndIndex + 4);
-  const statusLine = headersText.split("\r\n")[0];
-  const statusMatch = statusLine.match(/HTTP\/[\d.]+ (\d+)/);
-  const status = statusMatch ? parseInt(statusMatch[1]) : 0;
-
-  return {
-    ok: status >= 200 && status < 300,
-    status,
-    statusText: statusLine,
-    text: () => bodyText,
-    json: () => JSON.parse(bodyText),
-  };
-}
-
-const AUTH_TTL_MS = 2 * 60 * 60 * 1000;
-
-interface NodeGlobalArgs {
-  apiUrl: string;
+interface ApiTransport {
+  kind: "api";
   node: string;
-  username?: string;
-  password?: string;
-  realm?: string;
+  apiUrl: string;
+  tokenId: string;
+  tokenSecret: string;
+  caCert?: string;
   skipTlsVerify?: boolean;
 }
 
-async function resolveAuth(
-  globalArgs: NodeGlobalArgs,
-  context: { definition: { id: string }; repoDir: string },
-) {
-  const { apiUrl, skipTlsVerify, username, password, realm } = globalArgs;
+interface SshTransport {
+  kind: "ssh";
+  node: string;
+}
 
-  try {
-    const authDir =
-      `${context.repoDir}/.swamp/data/@keeb/proxmox/node/${context.definition.id}/auth`;
-    const entries: { name: string; isDirectory: boolean }[] = [];
-    // @ts-ignore - Deno API
-    for await (const entry of Deno.readDir(authDir)) {
-      if (entry.isDirectory) entries.push(entry);
-    }
-    if (entries.length > 0) {
-      const versions = entries
-        .map((e) => parseInt(e.name, 10))
-        .filter((n) => !isNaN(n));
-      const latest = Math.max(...versions);
-      const rawPath = `${authDir}/${latest}/raw`;
-      const metaPath = `${authDir}/${latest}/metadata.yaml`;
-      // @ts-ignore - Deno API
-      const metaText = await Deno.readTextFile(metaPath);
-      const createdAtMatch = metaText.match(/createdAt:\s*'([^']+)'/);
-      if (createdAtMatch) {
-        const ageMs = Date.now() - new Date(createdAtMatch[1]).getTime();
-        if (ageMs < AUTH_TTL_MS) {
-          // @ts-ignore - Deno API
-          const rawText = await Deno.readTextFile(rawPath);
-          const cached = JSON.parse(rawText);
-          return { ticket: cached.ticket, csrfToken: cached.csrfToken };
-        }
-      }
-    }
-  } catch (_e) {
-    // No usable cache — fall through to password auth.
-  }
+type Transport = ApiTransport | SshTransport;
 
-  if (!username || !password) {
-    throw new Error(
-      "No cached Proxmox auth found and no username/password configured. " +
-        "Run the node's `auth` method first, or set username/password.",
-    );
-  }
+interface GlobalArgs {
+  transport: Transport;
+}
 
-  const formData = new URLSearchParams();
-  formData.append("username", `${username}@${realm || "pam"}`);
-  formData.append("password", password);
+/** POST /nodes/{node}/status with command=shutdown over the PVE REST API. */
+async function requestNodeShutdown(t: ApiTransport): Promise<unknown> {
+  const url = `${t.apiUrl.replace(/\/+$/, "")}/api2/json/nodes/${t.node}/status`;
+  const body = new URLSearchParams({ command: "shutdown" });
 
-  const response = await fetchWithCurl(`${apiUrl}/api2/json/access/ticket`, {
+  const response = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: formData.toString(),
-    skipTlsVerify: skipTlsVerify ?? true,
+    headers: {
+      Authorization: `PVEAPIToken=${t.tokenId}=${t.tokenSecret}`,
+      Accept: "application/json",
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body,
   });
+
+  const text = await response.text();
   if (!response.ok) {
     throw new Error(
-      `Authentication failed: ${response.status} ${response.statusText}`,
+      `Failed to shut down node ${t.node}: ${response.status} ${response.statusText} - ${text}`,
     );
   }
-  const result = response.json();
-  return {
-    ticket: result.data.ticket,
-    csrfToken: result.data.CSRFPreventionToken,
-  };
+  const parsed = text ? JSON.parse(text) : {};
+  return parsed.data;
 }
 
 export const extension = {
-  type: "@keeb/proxmox/node",
+  type: "@stateless/proxmox/lxc",
   resources: {
-    "shutdown": {
+    "nodeShutdown": {
       description: "Result of a node shutdown command",
       schema: z.object({
-        upid: z.string().describe("Proxmox task UPID for the shutdown"),
         node: z.string(),
+        upid: z.string().optional().describe(
+          "Proxmox task UPID for the shutdown, when returned",
+        ),
         requestedAt: z.string(),
       }),
       lifetime: "infinite",
@@ -149,9 +76,9 @@ export const extension = {
   },
   methods: [
     {
-      shutdown: {
+      nodeShutdown: {
         description:
-          "Power off the Proxmox host node (POST /nodes/{node}/status, command=shutdown). Requires confirm: true.",
+          "Power off the Proxmox host node (POST /nodes/{node}/status, command=shutdown). Requires confirm: true. API transport (token auth) only.",
         arguments: z.object({
           confirm: z.boolean().describe(
             "Must be true to actually issue the shutdown — safety guard against an accidental host power-off",
@@ -160,9 +87,7 @@ export const extension = {
         execute: async (
           args: { confirm: boolean },
           context: {
-            globalArgs: NodeGlobalArgs;
-            definition: { id: string; name: string };
-            repoDir: string;
+            globalArgs: GlobalArgs;
             logger: { info: (msg: string, props?: unknown) => void };
             writeResource: (
               specName: string,
@@ -177,38 +102,30 @@ export const extension = {
             );
           }
 
-          const { apiUrl, node, skipTlsVerify } = context.globalArgs;
-          const auth = await resolveAuth(context.globalArgs, context);
-
-          context.logger.info("Shutting down Proxmox node {node}", { node });
-
-          const response = await fetchWithCurl(
-            `${apiUrl}/api2/json/nodes/${node}/status`,
-            {
-              method: "POST",
-              headers: {
-                "Cookie": `PVEAuthCookie=${auth.ticket}`,
-                "CSRFPreventionToken": auth.csrfToken,
-                "Content-Type": "application/x-www-form-urlencoded",
-              },
-              body: new URLSearchParams({ command: "shutdown" }).toString(),
-              skipTlsVerify,
-            },
-          );
-
-          if (!response.ok) {
+          const { transport } = context.globalArgs;
+          if (transport.kind !== "api") {
             throw new Error(
-              `Failed to shut down node: ${response.status} ${response.statusText} - ${response.text()}`,
+              "nodeShutdown only supports the 'api' transport (token auth) today. " +
+                "Reconfigure this model's transport to kind: 'api', or shut the node " +
+                "down manually over SSH.",
             );
           }
 
-          const result = response.json();
-
-          const handle = await context.writeResource("shutdown", "shutdown", {
-            upid: String(result.data),
-            node,
-            requestedAt: new Date().toISOString(),
+          context.logger.info("Shutting down Proxmox node {node}", {
+            node: transport.node,
           });
+
+          const data = await requestNodeShutdown(transport);
+
+          const handle = await context.writeResource(
+            "nodeShutdown",
+            "nodeShutdown",
+            {
+              node: transport.node,
+              upid: typeof data === "string" ? data : undefined,
+              requestedAt: new Date().toISOString(),
+            },
+          );
           return { dataHandles: [handle] };
         },
       },

@@ -1,0 +1,15 @@
+type: '@stateless/proxmox/lxc'
+typeVersion: 2026.06.10.1
+id: f381a947-0d25-4f45-a854-f954889216a0
+name: proxmox
+version: 1
+tags: {}
+globalArguments:
+  transport:
+    kind: api
+    node: proxmox
+    apiUrl: https://proxmox.thomo.de:8006
+    tokenId: "Api@pve!swamp"
+    tokenSecret: ${{ vault.get('proxmox', 'token_secret') }}
+    skipTlsVerify: false
+methods: {}
