@@ -1,0 +1,17 @@
+type: '@swamp/ssh'
+typeVersion: 2026.07.28.1
+id: e7284934-5122-4527-ae00-8f120251fa43
+name: ha
+version: 1
+tags: {}
+globalArguments:
+  name: ha
+  transport:
+    kind: ssh
+    user: root
+    auth:
+      kind: key
+  hosts:
+    - name: ha
+      address: ha.thomo.de
+methods: {}

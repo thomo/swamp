@@ -1,0 +1,148 @@
+id: 652d30eb-3a99-4bda-a96e-65918f5b0bf6
+name: shutdown-homelab
+description: >-
+  Ordered homelab shutdown. Stops Proxmox guests first, then powers off the
+  proxmox host. Remaining physical hosts (mediabox, satellite, nas, ha,
+  racknode) will be added as later stages.
+tags: {}
+jobs:
+  - name: stop-guests
+    description: Stop all running Proxmox VMs/LXCs before touching the host
+    steps:
+      - name: stop-ds9
+        description: Stop QEMU VM ds9 (vmid 10009)
+        task:
+          type: model_method
+          modelIdOrName: proxmox-vm
+          methodName: stop
+          inputs:
+            vmid: 10009
+      - name: stop-home
+        description: Stop QEMU VM home (vmid 10007)
+        dependsOn:
+          - step: stop-ds9
+            condition:
+              type: succeeded
+        task:
+          type: model_method
+          modelIdOrName: proxmox-vm
+          methodName: stop
+          inputs:
+            vmid: 10007
+      - name: stop-proxy
+        description: Stop LXC container proxy (vmid 10010)
+        task:
+          type: model_method
+          modelIdOrName: proxmox
+          methodName: stop
+          inputs:
+            vmid: 10010
+      - name: stop-collector
+        description: Stop LXC container collector (vmid 10006)
+        dependsOn:
+          - step: stop-proxy
+            condition:
+              type: succeeded
+        task:
+          type: model_method
+          modelIdOrName: proxmox
+          methodName: stop
+          inputs:
+            vmid: 10006
+      - name: stop-mqtt
+        description: Stop LXC container mqtt (vmid 10005)
+        dependsOn:
+          - step: stop-collector
+            condition:
+              type: succeeded
+        task:
+          type: model_method
+          modelIdOrName: proxmox
+          methodName: stop
+          inputs:
+            vmid: 10005
+  - name: shutdown-proxmox-host
+    description: Power off the proxmox node itself, once all guests are stopped
+    dependsOn:
+      - job: stop-guests
+        condition:
+          type: succeeded
+    steps:
+      - name: node-shutdown
+        description: Issue the Proxmox node shutdown command
+        task:
+          type: model_method
+          modelIdOrName: proxmox
+          methodName: nodeShutdown
+          inputs:
+            confirm: true
+  - name: shutdown-satellite
+    description: Shut down the satellite physical host
+    dependsOn:
+      - job: shutdown-proxmox-host
+        condition:
+          type: succeeded
+    steps:
+      - name: shutdown-satellite-host
+        description: Issue shutdown over SSH, backgrounded so the exec call returns before the connection drops
+        task:
+          type: model_method
+          modelIdOrName: satellite
+          methodName: exec
+          inputs:
+            hosts: all
+            sudo: true
+            command: shutdown -h now >/dev/null 2>&1 &
+  - name: shutdown-nas
+    description: Shut down the nas physical host
+    dependsOn:
+      - job: shutdown-satellite
+        condition:
+          type: succeeded
+    steps:
+      - name: shutdown-nas-host
+        description: Issue shutdown over SSH, backgrounded so the exec call returns before the connection drops
+        task:
+          type: model_method
+          modelIdOrName: nas
+          methodName: exec
+          inputs:
+            hosts: all
+            sudo: true
+            command: shutdown -h now >/dev/null 2>&1 &
+  - name: shutdown-ha
+    description: Shut down the ha (Home Assistant OS) physical host
+    dependsOn:
+      - job: shutdown-nas
+        condition:
+          type: succeeded
+    steps:
+      - name: shutdown-ha-host
+        description: >-
+          HAOS has no standard shutdown binary; use the Supervisor CLI, which
+          talks to the Supervisor API asynchronously (no backgrounding needed).
+        task:
+          type: model_method
+          modelIdOrName: ha
+          methodName: exec
+          inputs:
+            hosts: all
+            command: ha host shutdown
+  - name: shutdown-racknode
+    description: Shut down the racknode physical host
+    dependsOn:
+      - job: shutdown-ha
+        condition:
+          type: succeeded
+    steps:
+      - name: shutdown-racknode-host
+        description: Issue shutdown over SSH, backgrounded so the exec call returns before the connection drops
+        task:
+          type: model_method
+          modelIdOrName: racknode
+          methodName: exec
+          inputs:
+            hosts: all
+            sudo: true
+            command: shutdown -h now >/dev/null 2>&1 &
+version: 1

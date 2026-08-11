@@ -1,0 +1,17 @@
+type: '@swamp/ssh'
+typeVersion: 2026.07.28.1
+id: 2f522506-f6b3-4bab-bec6-dd859fcd994b
+name: racknode
+version: 1
+tags: {}
+globalArguments:
+  name: racknode
+  transport:
+    kind: ssh
+    user: pi
+    auth:
+      kind: key
+  hosts:
+    - name: racknode
+      address: racknode.thomo.de
+methods: {}

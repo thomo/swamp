@@ -1,0 +1,17 @@
+type: '@swamp/ssh'
+typeVersion: 2026.07.28.1
+id: b8fa05c0-6547-462d-ac1c-dba73a6ffdb9
+name: nas
+version: 1
+tags: {}
+globalArguments:
+  name: nas
+  transport:
+    kind: ssh
+    user: deploy
+    auth:
+      kind: key
+  hosts:
+    - name: nas
+      address: nas.thomo.de
+methods: {}
