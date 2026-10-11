@@ -1,0 +1,17 @@
+type: '@swamp/ssh'
+typeVersion: 2026.07.28.1
+id: 6c0ac261-aa46-45e9-8ee8-d1faed9e98c4
+name: proxy
+version: 1
+tags: {}
+globalArguments:
+  name: proxy
+  transport:
+    kind: ssh
+    user: deploy
+    auth:
+      kind: key
+  hosts:
+    - name: proxy
+      address: proxy.thomo.de
+methods: {}

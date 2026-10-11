@@ -1,0 +1,65 @@
+id: 0c34e7c4-a326-461a-b30c-78fe98a9eb2c
+name: traefik-add-route
+description: >-
+  Publish a service through Traefik on proxy.thomo.de with a Let's Encrypt
+  certificate. Writes /etc/traefik/conf.d/<name>.yaml, where <name> is the
+  first label of the hostname (git.thomo.de -> git).
+tags: {}
+inputs:
+  properties:
+    hostname:
+      type: string
+      pattern: '^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$'
+      description: Public hostname, e.g. git.thomo.de
+    target:
+      type: string
+      pattern: '^https?://[^\s"`''$\\]+$'
+      description: Backend URL, e.g. http://ds9.thomo.de:10081
+  required: ["hostname", "target"]
+jobs:
+  - name: add-route
+    description: Write the Traefik dynamic config file on the proxy
+    steps:
+      - name: write-config
+        description: Render router + service config and install it atomically
+        task:
+          type: model_method
+          modelIdOrName: proxy
+          methodName: script
+          inputs:
+            hosts: all
+            interpreter: sh
+            script: |
+              set -eu
+              # Inlined rather than passed via env: the proxy's sshd has no
+              # AcceptEnv, so SendEnv vars never arrive. Inputs are
+              # pattern-validated, so single-quoting them is safe.
+              ROUTE_HOST='${{ inputs.hostname }}'
+              ROUTE_TARGET='${{ inputs.target }}'
+              NAME="${ROUTE_HOST%%.*}"
+              FILE="/etc/traefik/conf.d/$NAME.yaml"
+              TMP="$(mktemp)"
+              trap 'rm -f "$TMP"' EXIT
+              cat > "$TMP" <<EOF
+              http:
+                routers:
+                  $NAME-router:
+                    rule: "Host(\`$ROUTE_HOST\`)"
+                    entryPoints:
+                      - websecure
+                    service: $NAME-service
+                    tls:
+                      certResolver: letsencrypt
+
+                services:
+                  $NAME-service:
+                    loadBalancer:
+                      servers:
+                        - url: "$ROUTE_TARGET"
+              EOF
+              # Write as deploy, install as root.
+              sudo -n install -m 0644 "$TMP" "$FILE.tmp"
+              sudo -n mv "$FILE.tmp" "$FILE"
+              echo "wrote $FILE"
+              cat "$FILE"
+version: 1
